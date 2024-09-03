@@ -1,0 +1,211 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta data-n-head="ssr" data-hid="theme-color" name="theme-color" content="#7D93C8">
+    <meta http-equiv="X-UA-Compatible" content="IE=edge">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="robots" content="index, archive">
+    <meta name="description" content="Easily generate human-like, engaging comments for YouTube videos with our advanced tool. Enter any video link and get witty, natural comments in seconds!">
+    <meta property="og:locale" content="en_US">
+    <meta property="og:type" content="website">
+    <meta property="og:title" content="YouTube Comment Generator">
+    <meta property="og:description" content="Easily generate human-like, engaging comments for YouTube videos with our advanced tool. Enter any video link and get witty, natural comments in seconds!">
+    <meta property="og:image" content="img/favicon.png">
+    <meta property="og:url" content="https://rojansapkota.com.np/">
+    <link rel="shortcut icon" href="img/favicon.png" type="image/x-icon">
+    <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;600&display=swap" rel="stylesheet">
+    <style>
+        body {
+            font-family: 'Poppins', sans-serif;
+            background-color: #f0f2f5;
+            color: #333;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            height: 100vh;
+            margin: 0;
+        }
+
+        .container {
+            background-color: #ffffff;
+            padding: 30px;
+            border-radius: 12px;
+            box-shadow: 0 8px 16px rgba(0, 0, 0, 0.1);
+            width: 100%;
+            max-width: 500px;
+            text-align: center;
+        }
+
+        h1 {
+            font-size: 24px;
+            margin-bottom: 20px;
+            color: #3b5998;
+        }
+
+        form {
+            margin-bottom: 20px;
+        }
+
+        input[type="text"] {
+            width: 100%;
+            padding: 10px;
+            margin-bottom: 15px;
+            border-radius: 8px;
+            border: 1px solid #ddd;
+            font-size: 16px;
+            transition: border-color 0.3s;
+        }
+
+        input[type="text"]:focus {
+            border-color: #3b5998;
+            outline: none;
+        }
+
+        button {
+            background-color: #3b5998;
+            color: #fff;
+            padding: 12px 20px;
+            font-size: 16px;
+            border: none;
+            border-radius: 8px;
+            cursor: pointer;
+            transition: background-color 0.3s;
+        }
+
+        button:hover {
+            background-color: #4a69bd;
+        }
+
+        #result {
+            margin-top: 20px;
+            font-size: 18px;
+            opacity: 0;
+            transition: opacity 1s ease-out;
+        }
+
+        #result.show {
+            opacity: 1;
+        }
+
+        #result-text {
+            animation: fadeInUp 1s ease-out;
+        }
+
+        @keyframes fadeInUp {
+            0% {
+                opacity: 0;
+                transform: translateY(20px);
+            }
+            100% {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+
+        .loading {
+            margin-top: 20px;
+            font-size: 18px;
+            display: none;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>Video Comment Generator</h1>
+        <form id="commentForm">
+            <input type="text" id="video_id" name="video_id" placeholder="Enter Video Link" required>
+            <button type="submit">Generate Comment</button>
+        </form>
+        <div id="result" class="result">
+            <p id="result-text"></p>
+        </div>
+        <div id="loading" class="loading">Generating comment, please wait...</div>
+    </div>
+
+    <script>
+document.getElementById('commentForm').addEventListener('submit', async (event) => {
+    event.preventDefault();
+
+    const videoId = document.getElementById('video_id').value;
+    const loading = document.getElementById('loading');
+    const resultContainer = document.getElementById('result');
+    const resultText = document.getElementById('result-text');
+
+    loading.style.display = 'block';
+    resultContainer.classList.remove('show');
+    resultText.textContent = '';
+
+    try {
+        const extractedVidId = videoId.split('v=')[1];
+
+        const transcriptResponse = await fetch(`https://api.kome.ai/api/tools/youtube-transcripts`, {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+            },
+            body: JSON.stringify({ video_id: extractedVidId, format: true }),
+        });
+
+        const transcriptData = await transcriptResponse.json();
+
+        if (!transcriptResponse.ok) {
+            resultText.textContent = `Error fetching transcript: ${JSON.stringify(transcriptData)}`;
+            resultContainer.classList.add('show');
+            loading.style.display = 'none';
+            return;
+        }
+
+        const ins = "Imagine you're the wittiest writer on the planet—craft a short, hilarious comment based "
+                   + "on the video transcript I'll provide. The goal is to make it sound completely natural, "
+                   + "like something a real person would say, not an AI. Keep it light, funny, and relatable!: ";
+
+        const maxLength = 4500;
+        const availableSpace = maxLength - ins.length;
+        const transcriptText = transcriptData.transcript.slice(0, availableSpace);
+
+        const fullPrompt = ins + transcriptText;
+
+        const GROQ_API_KEY = process.env.GROQ_API_KEY; // Replace with your Groq API key
+
+        const commentResponse = await fetch('https://api.groq.com/openai/v1/chat/completions', {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+                'Authorization': `Bearer ${GROQ_API_KEY}`,
+            },
+            body: JSON.stringify({
+                messages: [
+                    {
+                        role: 'user',
+                        content: fullPrompt,
+                    }
+                ],
+                model: 'llama3-8b-8192',
+                temperature: 1,
+                max_tokens: 1024,
+                top_p: 1,
+                stream: false,
+                stop: null,
+            }),
+        });
+
+        const commentData = await commentResponse.json();
+
+        if (commentResponse.ok) {
+            resultText.textContent = commentData.choices[0].message.content;
+        } else {
+            resultText.textContent = `Error generating comment: ${JSON.stringify(commentData)}`;
+        }
+        resultContainer.classList.add('show');
+        loading.style.display = 'none';
+
+    } catch (error) {
+        loading.style.display = 'none';
+        resultText.textContent = `An error occurred: ${error.message}`;
+        resultContainer.classList.add('show');
+    }
+});
+    </script>
+</body>
+</html>
