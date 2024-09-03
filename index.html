@@ -166,7 +166,8 @@ document.getElementById('commentForm').addEventListener('submit', async (event) 
 
         const fullPrompt = ins + transcriptText;
 
-        const GROQ_API_KEY = process.env.GROQ_API_KEY; // Replace with your Groq API key
+        const GROQ_API_KEY = "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"; // Replace with your own Groq API key
+        // THIS API KEY IS DEMO TESTING KEY FOR REPOS OF MINE
 
         const commentResponse = await fetch('https://api.groq.com/openai/v1/chat/completions', {
             method: 'POST',
