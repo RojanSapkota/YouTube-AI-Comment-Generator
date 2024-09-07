@@ -13,6 +13,13 @@ Easily generate human-like, engaging comments for YouTube videos with our advanc
 - **Advanced Comment Generation:** Uses AI to craft natural, humorous comments that feel like they come from a real person.
 - **Loading Indicator:** Provides feedback while the comment is being generated.
 
+<h2 align="left">👤 Repo Visitors:</h2>
+<p align="left">
+<a href="https://rojansapkota.com.np" target="_blank">
+<img src="https://profile-counter.glitch.me/RojanSapkota_YouTube-AI-Comment-Generator/count.svg" alt="Visitor Counter"/>
+</a>
+</p>
+
 ## How It Works
 
 1. **Submit a Video Link:** Enter a YouTube video link into the form on the homepage.
