@@ -3,7 +3,7 @@
 Easily generate human-like, engaging comments for YouTube videos with our advanced tool. Simply enter a video link, and our tool will create witty, natural comments in seconds!
 
 <a href="https://cg.rojansapkota.com.np/">
-         <img alt="Image" src="http://image.thum.io/get/width/1200/https://rojansapkota.github.io/YouTube-AI-Comment-Generator/">
+         <img alt="Image" src="http://image.thum.io/get/width/1200/https://cg.rojansapkota.com.np/">
       </a>
 
 ## Features
