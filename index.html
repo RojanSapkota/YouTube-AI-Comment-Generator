@@ -138,6 +138,7 @@
             display: block;
         }
     </style>
+    
 </head>
 <body>
     <div class="container">
@@ -157,7 +158,7 @@
 document.getElementById('commentForm').addEventListener('submit', async (event) => {
     event.preventDefault();
 
-    const videoUrl = document.getElementById('video_id').value;
+    const videoId = document.getElementById('video_id').value;
     const loading = document.getElementById('loading');
     const resultContainer = document.getElementById('result');
     const resultText = document.getElementById('result-text');
@@ -167,25 +168,24 @@ document.getElementById('commentForm').addEventListener('submit', async (event) 
     resultText.textContent = '';
 
     try {
-        const transcriptResponse = await fetch('https://contentforest.com/api/tools/youtube-video-data', {
+        const extractedVidId = videoId.split('v=')[1];
+
+        const transcriptResponse = await fetch(`https://api.kome.ai/api/tools/youtube-transcripts`, {
             method: 'POST',
             headers: {
                 'Content-Type': 'application/json',
             },
-            body: JSON.stringify({
-                youtube_link: videoUrl,
-                include_transcript: true,
-                pick_keys: ['transcript'],
-                lang: 'en',
-            }),
+            body: JSON.stringify({ video_id: extractedVidId, format: true }),
         });
 
-        if (!transcriptResponse.ok) {
-            const errorText = await transcriptResponse.text(); // Get the error text from the response
-            throw new Error(`Error fetching transcript: ${transcriptResponse.status} ${errorText}`);
-        }
-
         const transcriptData = await transcriptResponse.json();
+
+        if (!transcriptResponse.ok) {
+            resultText.textContent = `Error fetching transcript: ${JSON.stringify(transcriptData)}`;
+            resultContainer.classList.add('show');
+            loading.style.display = 'none';
+            return;
+        }
 
         const ins = "Imagine you're the wittiest writer on the planet—craft a short, hilarious comment based "
                    + "on the video transcript I'll provide. The goal is to make it sound completely natural, "
@@ -193,7 +193,7 @@ document.getElementById('commentForm').addEventListener('submit', async (event) 
 
         const maxLength = 4500;
         const availableSpace = maxLength - ins.length;
-        const transcriptText = transcriptData.transcript.slice(0, availableSpace).join(' ');
+        const transcriptText = transcriptData.transcript.slice(0, availableSpace);
 
         const fullPrompt = ins + transcriptText;
 
@@ -222,24 +222,22 @@ document.getElementById('commentForm').addEventListener('submit', async (event) 
             }),
         });
 
-        if (!commentResponse.ok) {
-            const errorText = await commentResponse.text(); // Get the error text from the response
-            throw new Error(`Error generating comment: ${commentResponse.status} ${errorText}`);
-        }
-
         const commentData = await commentResponse.json();
 
-        resultText.textContent = commentData.choices[0].message.content;
+        if (commentResponse.ok) {
+            resultText.textContent = commentData.choices[0].message.content;
+        } else {
+            resultText.textContent = `Error generating comment: ${JSON.stringify(commentData)}`;
+        }
         resultContainer.classList.add('show');
+        loading.style.display = 'none';
 
     } catch (error) {
+        loading.style.display = 'none';
         resultText.textContent = `An error occurred: ${error.message}`;
         resultContainer.classList.add('show');
-    } finally {
-        loading.style.display = 'none';
     }
 });
-
     </script>
 </body>
 </html>
