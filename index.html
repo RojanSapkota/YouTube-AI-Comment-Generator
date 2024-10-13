@@ -137,6 +137,17 @@
         .loading.show {
             display: block;
         }
+
+        .error-message {
+            color: #ff0000; /* Red color for error messages */
+            margin-top: 15px;
+            opacity: 0;
+            transition: opacity 1s ease-out;
+        }
+
+        .error-message.show {
+            opacity: 1;
+        }
     </style>
     
 </head>
@@ -145,26 +156,30 @@
         <h1>YT Video Comment Generator</h1>
         <form id="commentForm">
             <input type="text" id="video_id" name="video_id" placeholder="Enter Video Link" required>
-
+            <input type="text" id="api_key" name="api_key" placeholder="Enter Your Groq API Key" required>
             <button type="submit">Generate Comment</button>
         </form>
         <div id="result" class="result">
             <p id="result-text"></p>
         </div>
         <div id="loading" class="loading">Generating comment, please wait...</div>
+        <div id="error-message" class="error-message"></div> <!-- Error message container -->
     </div>
     <script>
 document.getElementById('commentForm').addEventListener('submit', async (event) => {
     event.preventDefault();
 
     const videoId = document.getElementById('video_id').value;
+    const apiKey = document.getElementById('api_key').value; // Get the API key
     const loading = document.getElementById('loading');
     const resultContainer = document.getElementById('result');
     const resultText = document.getElementById('result-text');
+    const errorMessage = document.getElementById('error-message'); // Error message container
 
     loading.style.display = 'block';
     resultContainer.classList.remove('show');
     resultText.textContent = '';
+    errorMessage.textContent = ''; // Clear previous error message
 
     try {
         const extractedVidId = videoId.split('v=')[1];
@@ -188,7 +203,7 @@ document.getElementById('commentForm').addEventListener('submit', async (event) 
 
         const ins = "Imagine you're the wittiest writer on the planet—craft a short, hilarious comment based "
                    + "on the video transcript I'll provide. The goal is to make it sound completely natural, "
-                   + "like something a real person would say, not an AI. Keep it light, funny, and relatable! and just give me the comment only: ";
+                   + "like something a real person would say, not an AI. Keep it light, funny, and relatable!: ";
 
         const maxLength = 4500;
         const availableSpace = maxLength - ins.length;
@@ -196,13 +211,11 @@ document.getElementById('commentForm').addEventListener('submit', async (event) 
 
         const fullPrompt = ins + transcriptText;
 
-        const GROQ_API_KEY = ""; // Replace with your own Groq API key
-
         const commentResponse = await fetch('https://api.groq.com/openai/v1/chat/completions', {
             method: 'POST',
             headers: {
                 'Content-Type': 'application/json',
-                'Authorization': `Bearer ${GROQ_API_KEY}`,
+                'Authorization': `Bearer ${apiKey}`, // Use the API key from the input
             },
             body: JSON.stringify({
                 messages: [
@@ -225,7 +238,13 @@ document.getElementById('commentForm').addEventListener('submit', async (event) 
         if (commentResponse.ok) {
             resultText.textContent = commentData.choices[0].message.content;
         } else {
-            resultText.textContent = `Error generating comment: ${JSON.stringify(commentData)}`;
+            // Check for specific error message from API
+            if (commentData.error && commentData.error.message.includes("Invalid API Key")) {
+                errorMessage.textContent = "Invalid API Key. Please check your API key and try again. https://console.groq.com/keys";
+                errorMessage.classList.add('show'); // Show error message
+            } else {
+                resultText.textContent = `Error generating comment: ${JSON.stringify(commentData)}`;
+            }
         }
         resultContainer.classList.add('show');
         loading.style.display = 'none';
